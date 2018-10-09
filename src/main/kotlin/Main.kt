@@ -15,23 +15,28 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter
 import com.github.javaparser.resolution.types.ResolvedPrimitiveType
 import com.github.javaparser.symbolsolver.JavaSymbolSolver
 import com.github.javaparser.symbolsolver.resolution.typesolvers.ClassLoaderTypeSolver
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 import java.io.Reader
 import java.io.Writer
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 
 fun main(args: Array<String>) {
-  if (args.isEmpty()) {
-    System.err.println("No file specified.")
+  if (args.size > 1) {
+    System.err.println("Too many arguments.")
     return
+  }
+
+  val reader = if (args.isEmpty()) {
+    InputStreamReader(System.`in`)
+  } else {
+    Files.newBufferedReader(Paths.get(args[0]))
   }
 
   val transformer = Transformer()
 
-  args.forEach {
-    transformer.transform(Paths.get(it))
-  }
+  transformer.transform(reader, OutputStreamWriter(System.out))
 }
 
 class Transformer(classLoader: ClassLoader = ClassLoader.getSystemClassLoader().parent) {
@@ -42,10 +47,6 @@ class Transformer(classLoader: ClassLoader = ClassLoader.getSystemClassLoader().
     val config = ParserConfiguration()
     config.setSymbolResolver(symbolSolver)
     parser = JavaParser(config)
-  }
-
-  fun transform(path: Path) {
-    transform(Files.newBufferedReader(path), Files.newBufferedWriter(path))
   }
 
   fun transform(reader: Reader, writer: Writer) {
