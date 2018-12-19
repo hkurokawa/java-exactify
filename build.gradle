@@ -28,6 +28,11 @@ jar {
   }
 }
 
+test {
+  useJUnitPlatform()
+  reports.junitXml.enabled = true
+}
+
 compileKotlin {
   kotlinOptions.jvmTarget = "1.8"
 }
