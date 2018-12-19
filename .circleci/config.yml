@@ -1,27 +1,35 @@
 version: 2
 jobs:
   build:
-    working_directory: ~/circleci-java-exactify
+    working_directory: ~/repo
 
     docker:
-      - image: circleci/openjdk:9-jdk-browsers
+    - image: circleci/openjdk:9-jdk
+
+    environment:
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
 
     steps:
-      - checkout
-      - restore_cache:
-          key: circleci-java-exactify-{{ checksum "build.gradle" }}
-      
-      - run: ./gradle 
-      
-      - save_cache:
-          paths:
-            - ~/.gradlew shadowJar
-          key: circleci-java-exactify-{{ checksum "build.gradle" }}
-      
-      - run: ./gradlew test
-      
-      - store_test_results:
-          path: build/reports/tests/test
-      
-      - store_artifacts:
-          path: build/libs
+    - checkout
+
+    - restore_cache:
+        keys:
+        - v1-dependencies-{{ checksum "build.gradle" }}
+        # fallback to using the latest cache if no exact match is found
+        - v1-dependencies-
+
+    - run: ./gradlew shadowJar
+
+    - save_cache:
+        paths:
+        - ~/.gradle
+        key: v1-dependencies-{{ checksum "build.gradle" }}
+
+    - run: ./gradlew test
+
+    - store_test_results:
+        path: build/reports/tests/test
+
+    - store_artifacts:
+        path: build/libs
