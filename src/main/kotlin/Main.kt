@@ -80,6 +80,7 @@ class OverflowableVisitor : VoidVisitorAdapter<Unit>() {
   var replaced = false
 
   override fun visit(expr: BinaryExpr, arg: Unit) {
+    super.visit(expr, arg)
     with(expr) {
       if (left.isOverflowable() && right.isOverflowable() && operator.isOverflowable()) {
         expr.replace(MethodCallExpr(mathClass, operator.toMathMethod(), NodeList(left, right)))
@@ -89,6 +90,7 @@ class OverflowableVisitor : VoidVisitorAdapter<Unit>() {
   }
 
   override fun visit(expr: UnaryExpr, arg: Unit) {
+    super.visit(expr, arg)
     expr.operator.toMathMethod()?.let {
       val rightHand = MethodCallExpr(mathClass, it, NodeList(expr.expression))
       expr.replace(AssignExpr(expr.expression, rightHand, AssignExpr.Operator.ASSIGN))
@@ -97,6 +99,7 @@ class OverflowableVisitor : VoidVisitorAdapter<Unit>() {
   }
 
   override fun visit(expr: AssignExpr, arg: Unit) {
+    super.visit(expr, arg)
     with(expr) {
       if (target.isOverflowable() && value.isOverflowable() && operator.isOverflowable()) {
         val rightHand = MethodCallExpr(mathClass, operator.toMathMethod(), NodeList(target, value))

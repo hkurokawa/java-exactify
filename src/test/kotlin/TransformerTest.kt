@@ -1,6 +1,5 @@
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-
-import org.junit.jupiter.api.Assertions.*
 import java.io.StringReader
 import java.io.StringWriter
 
@@ -88,6 +87,20 @@ internal class TransformerTest {
       int a = 1;
       a = Math.addExact(a, 2);
     """.trimIndent())
+  }
+
+  @Test
+  fun testAssignBin() {
+    test(
+        """
+          int a;
+          a = 1 + 2;
+        """.trimIndent(),
+        """
+          int a;
+          a = Math.addExact(1, 2);
+        """.trimIndent()
+    )
   }
 
   private fun test(input: String, expected: String) {
