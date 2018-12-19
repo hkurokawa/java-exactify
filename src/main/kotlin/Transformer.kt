@@ -30,6 +30,42 @@ class Transformer(classLoader: ClassLoader = ClassLoader.getSystemClassLoader().
     parser = JavaParser(config)
   }
 
+  /**
+   * This method transform the given source code so that it does not occur an unexpected
+   * arithmetic overflow.
+   *
+   * The method reads the Java source code from [reader] and then writes out the transformed code
+   * to [writer] where all the arithmetic operations which could cause an overflow are replaced with
+   * `xxxExact` method in [Math] class, such as [Math.addExact] or [Math.subtractExact].
+   *
+   * Example:
+   * ```
+   *   public class Main {
+   *     public static void main(String[] args) {
+   *        int a = 1;
+   *        a++;
+   *        a += 2;
+   *        int b = a - 3;
+   *     }
+   *   }
+   * ```
+   * would be transformed to the below code.
+   * ```
+   *   public class Main {
+   *     public static void main(String[] args) {
+   *        int a = 1;
+   *        a = Math.incrementExact(a);
+   *        a = Math.addExact(a, 2);
+   *        int b = Math.subtractExact(a, 3);
+   *     }
+   *   }
+   * ```
+   *
+   * Note the method throws an [ParseProblemException] if the given code is not a valid Java code.
+   *
+   * @param[reader] the reader to read the source code from to transform
+   * @param[writer] the writer to write the transformed code to
+   */
   fun transform(reader: Reader, writer: Writer) {
     val cu = parse(reader)
     do {
