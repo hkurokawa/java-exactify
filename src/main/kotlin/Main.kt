@@ -28,7 +28,7 @@ fun main(args: Array<String>) {
     return
   }
 
-  val reader = if (args.isEmpty()) {
+  val reader: Reader = if (args.isEmpty()) {
     InputStreamReader(System.`in`)
   } else {
     Files.newBufferedReader(Paths.get(args[0]))
