@@ -34,9 +34,9 @@ jobs:
     - run:
         name: Save test results
         command: |
-          mkdir -p ~/junit/
+          mkdir -p ~/junit/html
           find . -type f -regex ".*/build/test-results/test/.*xml" -exec cp {} ~/junit/ \;
-          cp -r build/reports/tests/test/* ~/junit/
+          cp -r build/reports/tests/test/* ~/junit/html/
         when: always
 
     - store_test_results:
