@@ -19,14 +19,14 @@ jobs:
         # fallback to using the latest cache if no exact match is found
         - v1-dependencies-
 
-    - run: ./gradlew shadowJar
+    - run: gradle shadowJar
 
     - save_cache:
         paths:
         - ~/.gradle
         key: v1-dependencies-{{ checksum "build.gradle" }}
 
-    - run: ./gradlew test
+    - run: gradle test
 
     - store_test_results:
         path: build/reports/tests/test
