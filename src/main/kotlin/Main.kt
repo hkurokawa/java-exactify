@@ -23,50 +23,49 @@ import java.nio.file.Files
 import java.nio.file.Paths
 
 fun main(args: Array<String>) {
-  if (args.size > 1) {
-    System.err.println("Too many arguments.")
-    return
-  }
-
-  val reader: Reader = if (args.isEmpty()) {
-    InputStreamReader(System.`in`)
+  if (args.isEmpty()) {
+    val reader = InputStreamReader(System.`in`)
+    val writer = OutputStreamWriter(System.out)
+    Transformer().transform(reader, writer)
+    writer.flush()
   } else {
-    Files.newBufferedReader(Paths.get(args[0]))
+    val transformer = Transformer()
+    val writer = OutputStreamWriter(System.out)
+    args.forEach { arg ->
+      val reader = Files.newBufferedReader(Paths.get(arg))
+      reader.use { r ->
+        transformer.transform(r, writer)
+      }
+    }
+    writer.flush()
   }
-
-  val transformer = Transformer()
-
-  transformer.transform(reader, OutputStreamWriter(System.out))
 }
 
 class Transformer(classLoader: ClassLoader = ClassLoader.getSystemClassLoader().parent) {
   private val parser: JavaParser
 
   init {
-    val symbolSolver = JavaSymbolSolver(ClassLoaderTypeSolver(classLoader))
+    val symbolSolver = JavaSymbolSolver(
+        ClassLoaderTypeSolver(
+            classLoader))
     val config = ParserConfiguration()
     config.setSymbolResolver(symbolSolver)
     parser = JavaParser(config)
   }
 
   fun transform(reader: Reader, writer: Writer) {
-    writer.use { w ->
-      val out = reader.use { r ->
-        val cu = parse(r)
-        do {
-          val visitor = OverflowableVisitor()
-          cu.accept(visitor, Unit)
-        } while (visitor.replaced)
+    val cu = parse(reader)
+    do {
+      val visitor = OverflowableVisitor()
+      cu.accept(visitor, Unit)
+    } while (visitor.replaced)
 
-        cu
-      }.toString()
-
-      w.write(out)
-    }
+    writer.write(cu.toString())
   }
 
   private fun parse(reader: Reader): CompilationUnit {
-    val result = parser.parse(ParseStart.COMPILATION_UNIT, Providers.provider(reader))
+    val result = parser.parse(ParseStart.COMPILATION_UNIT,
+        Providers.provider(reader))
     return if (result.isSuccessful) {
       result.result.get()
     } else {
@@ -83,7 +82,9 @@ class OverflowableVisitor : VoidVisitorAdapter<Unit>() {
     super.visit(expr, arg)
     with(expr) {
       if (left.isOverflowable() && right.isOverflowable() && operator.isOverflowable()) {
-        expr.replace(MethodCallExpr(mathClass, operator.toMathMethod(), NodeList(left, right)))
+        expr.replace(
+            MethodCallExpr(mathClass, operator.toMathMethod(),
+                NodeList(left, right)))
         replaced = true
       }
     }
@@ -92,8 +93,10 @@ class OverflowableVisitor : VoidVisitorAdapter<Unit>() {
   override fun visit(expr: UnaryExpr, arg: Unit) {
     super.visit(expr, arg)
     expr.operator.toMathMethod()?.let {
-      val rightHand = MethodCallExpr(mathClass, it, NodeList(expr.expression))
-      expr.replace(AssignExpr(expr.expression, rightHand, AssignExpr.Operator.ASSIGN))
+      val rightHand = MethodCallExpr(mathClass, it,
+          NodeList(expr.expression))
+      expr.replace(AssignExpr(expr.expression, rightHand,
+          AssignExpr.Operator.ASSIGN))
       replaced = true
     }
   }
@@ -102,8 +105,11 @@ class OverflowableVisitor : VoidVisitorAdapter<Unit>() {
     super.visit(expr, arg)
     with(expr) {
       if (target.isOverflowable() && value.isOverflowable() && operator.isOverflowable()) {
-        val rightHand = MethodCallExpr(mathClass, operator.toMathMethod(), NodeList(target, value))
-        expr.replace(AssignExpr(target, rightHand, AssignExpr.Operator.ASSIGN))
+        val rightHand =
+            MethodCallExpr(mathClass, operator.toMathMethod(),
+                NodeList(target, value))
+        expr.replace(AssignExpr(target, rightHand,
+            AssignExpr.Operator.ASSIGN))
         replaced = true
       }
     }
