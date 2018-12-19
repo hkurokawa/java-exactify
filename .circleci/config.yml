@@ -1,0 +1,46 @@
+version: 2
+jobs:
+  build:
+    working_directory: ~/repo
+
+    docker:
+    - image: circleci/openjdk:9-jdk
+
+    environment:
+      JVM_OPTS: -Xmx3200m
+      TERM: dumb
+
+    steps:
+    - checkout
+
+    - restore_cache:
+        keys:
+        - v1-dependencies-{{ checksum "build.gradle" }}
+        # fallback to using the latest cache if no exact match is found
+        - v1-dependencies-
+
+    - run: gradle shadowJar
+
+    - save_cache:
+        paths:
+        - ~/.gradle
+        key: v1-dependencies-{{ checksum "build.gradle" }}
+
+    - store_artifacts:
+        path: build/libs
+
+    - run: gradle test
+
+    - run:
+        name: Save test results
+        command: |
+          mkdir -p ~/junit/html
+          find . -type f -regex ".*/build/test-results/test/.*xml" -exec cp {} ~/junit/ \;
+          cp -r build/reports/tests/test/* ~/junit/html/
+        when: always
+
+    - store_test_results:
+        path: ~/junit
+
+    - store_artifacts:
+        path: ~/junit
